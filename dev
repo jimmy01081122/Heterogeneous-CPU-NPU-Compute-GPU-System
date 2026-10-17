@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Convenience wrapper around the dev container.
+#   ./dev            interactive shell in the container
+#   ./dev <cmd...>   run a command in the container (cwd = repo root)
+#   ./dev build      (re)build the image
+set -euo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")"
+export UID GID="$(id -g)"
+COMPOSE=(docker compose -f docker/compose.yml)
+
+if [[ "${1:-}" == "build" ]]; then
+    exec "${COMPOSE[@]}" build
+fi
+if [[ $# -eq 0 ]]; then
+    exec "${COMPOSE[@]}" run --rm dev bash
+fi
+exec "${COMPOSE[@]}" run --rm -T dev bash -lc "$*"

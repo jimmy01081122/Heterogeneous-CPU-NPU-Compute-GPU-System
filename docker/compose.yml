@@ -1,0 +1,27 @@
+name: hetero-llm
+
+services:
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    image: hetero-llm-dev:latest
+    container_name: hetero-llm-dev
+    hostname: hetero-dev
+    working_dir: /workspace
+    volumes:
+      - ..:/workspace
+      - ${HOME}/.ssh:/home/dev/.ssh:ro      # ssh/rsync to PYNQ board & GitHub
+      - ccache:/home/dev/.cache
+    environment:
+      - PYNQ_HOST=${PYNQ_HOST:-192.168.2.99}
+      - PYNQ_USER=${PYNQ_USER:-xilinx}
+    stdin_open: true
+    tty: true
+    network_mode: host
+
+volumes:
+  ccache:

@@ -1,0 +1,29 @@
+# models & generated artifacts
+models/*
+!models/.gitkeep
+sw/runtime/build/
+**/__pycache__/
+*.pyc
+.venv/
+
+# simulation outputs
+hw/tb/**/sim_build/
+*.vcd
+*.fst
+results.xml
+
+# Vivado (project is regenerated from hw/vivado/*.tcl)
+hw/vivado/build/
+*.jou
+*.log
+*.str
+.Xil/
+*.cache/
+*.runs/
+*.sim/
+*.hw/
+*.ip_user_files/
+
+# profiling raw outputs (summaries go to docs/)
+results/raw/
+tests/vectors/
