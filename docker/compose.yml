@@ -19,6 +19,7 @@ services:
     environment:
       - PYNQ_HOST=${PYNQ_HOST:-192.168.2.99}
       - PYNQ_USER=${PYNQ_USER:-xilinx}
+      - CCACHE_DIR=/tmp/ccache
     stdin_open: true
     tty: true
     network_mode: host

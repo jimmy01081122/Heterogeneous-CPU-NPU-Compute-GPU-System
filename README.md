@@ -42,20 +42,28 @@ Run with per-operator profiling:
         models/stories15M_q80.bin -z models/tokenizer.bin -t 0 -n 128"
 ```
 
+## RTL Simulation & Synthesis (Phase 3 & 5)
+
+```bash
+./dev "make -C hw/tb TARGET=npu"            # NPU 8x8 INT8 MAC array + real 260K/15M GEMV vectors
+./dev "make -C hw/tb TARGET=gpu"            # 4-lane SIMD/SIMT Compute GPU + RMSNorm/Softmax/SwiGLU/RoPE
+vivado -mode batch -source hw/vivado/synth_check.tcl   # manual Vivado XC7Z020 OOC synthesis & reports
+```
+
 ## Repository layout
 
 ```
 docker/            dev image (Dockerfile, compose.yml, requirements.txt)
-hw/rtl/{npu,gpu,common}   SystemVerilog sources
-hw/tb/             cocotb testbenches
-hw/vivado/         block-design TCL & XDC (run manually in Vivado)
+hw/rtl/{npu,gpu,common}   SystemVerilog sources (fp32_alu, npu_top, gpu_top)
+hw/tb/             cocotb testbenches (test_npu.py, test_gpu.py)
+hw/vivado/         synthesis & block-design TCL (run manually in Vivado)
 sw/runtime/src/    instrumented llama2.c runtimes (run_fp32.c, run_int8.c, prof.h)
 sw/runtime/upstream/  pristine llama2.c @ 350e04f (MIT) for reference/diffing
-sw/driver/         accelerator HAL (mmap + CMA)
-sw/gpu_kernels/    Compute GPU kernels / assembler
+sw/driver/         accelerator HAL (accel_hal.h)
+sw/gpu_kernels/    Compute GPU assembler & LLM vector kernels (kernels.py, gpu_kernels_bin.h)
 tools/             model export, golden model (q80.py), test-vector generation
 tests/golden/      expected greedy outputs
-docs/              design notes, decisions, experiment logs
+docs/              design notes, RTL architecture (rtl_design.md), experiment logs
 models/            (git-ignored) checkpoints, see tools/download_models.sh
 ```
 
@@ -63,11 +71,11 @@ models/            (git-ignored) checkpoints, see tools/download_models.sh
 
 | Phase | Content | Status |
 |---|---|---|
-| 1 | Environment, CPU inference, HDMI bring-up | in progress |
-| 2 | 15M INT8 inference & profiling | |
-| 3 | NPU RTL | |
-| 4 | CPU + NPU integration | |
-| 5 | Compute GPU + kernels | |
+| 1 | Environment, CPU inference, HDMI bring-up | Docker + CPU/QEMU golden done (board offline) |
+| 2 | 15M INT8 inference & profiling | Host profiling + workload model done |
+| 3 | NPU RTL | RTL + cocotb verified (260K & 15M vectors) |
+| 4 | CPU + NPU integration | HAL ready |
+| 5 | Compute GPU + kernels | RTL + ISA + 6 vector kernels cocotb verified |
 | 6 | CPU + NPU + GPU + HDMI | |
 | 7 | Evaluation & co-design | |
 
