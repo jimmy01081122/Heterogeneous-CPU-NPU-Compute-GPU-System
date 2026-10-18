@@ -37,6 +37,8 @@ tools/download_models.sh                                    # host or container
 
 ## RTL Verification & Vivado Synthesis (Phase 3 & 5)
 
+詳細的 Vivado 圖形介面（GUI）與指令列（Batch TCL）操作步驟請參閱 [`docs/vivado_guide.md`](docs/vivado_guide.md)。
+
 ```bash
 ./dev "make -C hw/tb TARGET=npu"            # NPU 8x8 INT8 MAC array + real 260K/15M GEMV vectors
 ./dev "make -C hw/tb TARGET=gpu"            # 4-lane SIMD/SIMT Compute GPU + 6 LLM vector kernels

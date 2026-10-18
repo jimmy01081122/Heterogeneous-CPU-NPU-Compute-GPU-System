@@ -253,7 +253,6 @@ validate_bd_design
 save_bd_design
 
 set bd_file [get_files system.bd]
-make_wrapper -files $bd_file -top
 set wrapper_file [make_wrapper -files $bd_file -top]
 add_files -norecurse $wrapper_file
 set_property top system_wrapper [current_fileset]
