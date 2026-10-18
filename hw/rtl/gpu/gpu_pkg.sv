@@ -29,6 +29,7 @@ package gpu_pkg;
     localparam logic [6:0] GPU_REG_PERF_BYTES_IN  = 7'h30;
     localparam logic [6:0] GPU_REG_PERF_BYTES_OUT = 7'h34;
     localparam logic [6:0] GPU_REG_ID             = 7'h38; // GPU_MAGIC_ID
+    localparam logic [6:0] GPU_REG_START_PC       = 7'h3C; // IMEM word index where RUN_KERNEL starts
 
     // Commands in GPU_REG_CTRL[5:2]
     typedef enum logic [3:0] {

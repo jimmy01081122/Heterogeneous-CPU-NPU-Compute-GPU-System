@@ -74,6 +74,7 @@ module gpu_top
     logic [31:0]      cfg_dma_len;
     logic [31:0]      cfg_param0;
     logic [31:0]      cfg_param1;
+    logic [IMEM_AW-1:0] cfg_start_pc;
     gpu_cmd_e         cfg_cmd;
     logic             cmd_start_pulse;
     logic             soft_rst_pulse;
@@ -127,6 +128,7 @@ module gpu_top
             cfg_imem_addr   <= '0;
             cfg_param0      <= 32'd0;
             cfg_param1      <= 32'd0;
+            cfg_start_pc    <= '0;
             cfg_cmd         <= GPU_CMD_NOP;
             cmd_start_pulse <= 1'b0;
             soft_rst_pulse  <= 1'b0;
@@ -164,6 +166,7 @@ module gpu_top
                     end
                     GPU_REG_PARAM0:    cfg_param0    <= wr_data;
                     GPU_REG_PARAM1:    cfg_param1    <= wr_data;
+                    GPU_REG_START_PC:  cfg_start_pc  <= wr_data[IMEM_AW-1:0];
                     default: ;
                 endcase
             end else if (s_axi_bvalid && s_axi_bready) begin
@@ -189,6 +192,7 @@ module gpu_top
                     GPU_REG_PERF_BYTES_IN:  s_axi_rdata <= perf_bytes_in;
                     GPU_REG_PERF_BYTES_OUT: s_axi_rdata <= perf_bytes_out;
                     GPU_REG_ID:             s_axi_rdata <= GPU_MAGIC_ID;
+                    GPU_REG_START_PC:       s_axi_rdata <= {{(32-IMEM_AW){1'b0}}, cfg_start_pc};
                     default:                s_axi_rdata <= 32'd0;
                 endcase
             end else if (s_axi_rvalid && s_axi_rready) begin
@@ -365,6 +369,7 @@ module gpu_top
         .clk               (clk),
         .rst_n             (rst_n && !soft_rst_pulse),
         .start_kernel      (start_kernel_pulse),
+        .start_pc          (cfg_start_pc),
         .cfg_vec_len       (cfg_vec_len),
         .kernel_busy       (kernel_busy),
         .kernel_done_pulse (kernel_done_pulse),

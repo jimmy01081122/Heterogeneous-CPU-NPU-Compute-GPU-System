@@ -57,6 +57,7 @@ static inline uint32_t npu_ctrl_word(uint32_t cmd, uint32_t out_mode) {
 #define GPU_REG_PERF_BYTES_IN   0x30u
 #define GPU_REG_PERF_BYTES_OUT  0x34u
 #define GPU_REG_ID              0x38u
+#define GPU_REG_START_PC        0x3Cu
 
 #define GPU_MAGIC_ID            0x47505531u
 

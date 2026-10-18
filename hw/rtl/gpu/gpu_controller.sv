@@ -23,6 +23,7 @@ module gpu_controller
     input  logic                        clk,
     input  logic                        rst_n,
     input  logic                        start_kernel,
+    input  logic [PC_W-1:0]             start_pc,
     input  logic [31:0]                 cfg_vec_len,
     output logic                        kernel_busy,
     output logic                        kernel_done_pulse,
@@ -114,7 +115,7 @@ module gpu_controller
             kernel_done_pulse <= 1'b0;
             if (start_kernel) begin
                 kernel_busy <= 1'b1;
-                pc          <= '0;
+                pc          <= start_pc;
                 vloop_idx   <= 32'd0;
             end else if (kernel_busy) begin
                 unique case (opcode)

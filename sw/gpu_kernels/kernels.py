@@ -235,6 +235,45 @@ def build_q80_epilogue_kernel(
     ]
 
 
+# ---------------------------------------------------------------------------
+# Resident IMEM image used by the heterogeneous runtime.
+#
+# All kernels are linked into one image loaded once at start-up; a kernel is
+# launched by writing its entry PC to GPU_REG_START_PC. Fixed SPM layout
+# (4 regions x 1024 words = the full 16 KB scratchpad):
+#   SPM_A = 0, SPM_B = 1024, SPM_C = 2048, SPM_D = 3072
+# ---------------------------------------------------------------------------
+SPM_A, SPM_B, SPM_C, SPM_D = 0, 1024, 2048, 3072
+_PC_RELATIVE = {OPCODES["VSTEP"], OPCODES["JMP"]}
+
+
+def relocate(prog: list[int], org: int) -> list[int]:
+    """Shift absolute branch targets (VSTEP / JMP imm14) by `org` words."""
+    out = []
+    for w in prog:
+        if (w >> 26) in _PC_RELATIVE:
+            w = (w & ~0x3FFF) | (((w & 0x3FFF) + org) & 0x3FFF)
+        out.append(w)
+    return out
+
+
+def build_image() -> tuple[list[int], dict[str, int]]:
+    kernels = {
+        "RMSNORM":      build_rmsnorm_kernel(x_base=SPM_A, w_base=SPM_B, o_base=SPM_C),
+        "SOFTMAX":      build_softmax_kernel(x_base=SPM_A),
+        "SWIGLU":       build_swiglu_kernel(hb_base=SPM_A, hb2_base=SPM_B),
+        "ROPE":         build_rope_kernel(vec_base=SPM_A, fcr_base=SPM_B, fci_base=SPM_C),
+        "RESIDUAL":     build_residual_kernel(x_base=SPM_A, xb_base=SPM_B),
+        "Q80_EPILOGUE": build_q80_epilogue_kernel(psum_base=SPM_A, ws_base=SPM_B, acc_base=SPM_C),
+    }
+    image: list[int] = []
+    entry: dict[str, int] = {}
+    for name, prog in kernels.items():
+        entry[name] = len(image)
+        image.extend(relocate(prog, len(image)))
+    return image, entry
+
+
 def emit_c_header(path: str) -> None:
     kernels = {
         "gpu_prog_rmsnorm": build_rmsnorm_kernel(),
@@ -250,10 +289,21 @@ def emit_c_header(path: str) -> None:
         "#define HETERO_GPU_KERNELS_BIN_H",
         "#include <stdint.h>",
         "",
+        "/* Stand-alone kernels (origin 0, default SPM bases) */",
     ]
     for name, words in kernels.items():
         hex_words = ", ".join(f"0x{w:08x}u" for w in words)
         lines.append(f"static const uint32_t {name}[{len(words)}] = {{ {hex_words} }};")
+
+    image, entry = build_image()
+    lines += ["", "/* Resident image: load once, launch via GPU_REG_START_PC */",
+              f"#define GPU_SPM_A {SPM_A}u", f"#define GPU_SPM_B {SPM_B}u",
+              f"#define GPU_SPM_C {SPM_C}u", f"#define GPU_SPM_D {SPM_D}u"]
+    for name, pc in entry.items():
+        lines.append(f"#define GPU_PC_{name} {pc}u")
+    lines.append(f"#define GPU_IMAGE_WORDS {len(image)}u")
+    hex_words = ", ".join(f"0x{w:08x}u" for w in image)
+    lines.append(f"static const uint32_t gpu_image[{len(image)}] = {{ {hex_words} }};")
     lines.append("\n#endif /* HETERO_GPU_KERNELS_BIN_H */\n")
     with open(path, "w") as f:
         f.write("\n".join(lines))
